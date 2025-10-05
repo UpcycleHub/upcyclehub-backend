@@ -2,15 +2,42 @@ const express = require("express");
 const router = express.Router();
 const Order = require("../models/order");
 
-// Create a new order
+// Create order
 router.post("/", async (req, res) => {
   try {
-    const order = new Order(req.body);
+    const { name, address, phone, paymentMethod, products, totalPrice } =
+      req.body;
+
+    // Validate required fields
+    if (
+      !name ||
+      !address ||
+      !phone ||
+      !paymentMethod ||
+      !products ||
+      products.length === 0
+    ) {
+      return res.status(400).json({
+        error: "All fields are required and products cannot be empty",
+      });
+    }
+
+    // Create and save order
+    const order = new Order({
+      name,
+      address,
+      phone,
+      paymentMethod,
+      products,
+      totalPrice,
+      status: "Pending",
+    });
+
     await order.save();
-    res.status(201).json(order);
+    res.status(201).json({ message: "Order saved successfully", order });
   } catch (err) {
-    console.error("Error creating order:", err);
-    res.status(500).json({ message: "Server error while creating order" });
+    console.error("Order save error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -20,8 +47,8 @@ router.get("/", async (req, res) => {
     const orders = await Order.find().populate("userId", "name email");
     res.json(orders);
   } catch (err) {
-    console.error("Error fetching orders:", err);
-    res.status(500).json({ message: "Server error while fetching orders" });
+    console.error("Get orders error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
