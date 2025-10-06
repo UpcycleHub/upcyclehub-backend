@@ -2,61 +2,58 @@ const express = require("express");
 const router = express.Router();
 const Order = require("../models/order");
 
-// Create a new order
+// ✅ Create new order
 router.post("/", async (req, res) => {
   try {
-    console.log("Request body:", req.body);
+    console.log("📦 Incoming order data:", req.body);
 
     const { name, address, phone, paymentMethod, products, totalPrice } =
       req.body;
 
-    // Validation
+    // ✅ Validate fields
     if (
       !name ||
       !address ||
       !phone ||
       !paymentMethod ||
       !products ||
-      products.length === 0 ||
-      totalPrice === undefined
+      products.length === 0
     ) {
-      return res.status(400).json({
-        error: "All fields are required and products cannot be empty",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "All fields are required and products cannot be empty",
+        });
     }
 
-    // Create new order document
+    // ✅ Save to MongoDB
     const order = new Order({
       name,
       address,
       phone,
       paymentMethod,
-      products: products.map((p) => ({
-        productId: p.productId,
-        quantity: p.quantity,
-      })),
+      products,
       totalPrice,
       status: "Pending",
     });
 
-    // Save order to MongoDB
     await order.save();
-    console.log("Order saved:", order);
+    console.log("✅ Order saved successfully:", order);
 
     res.status(201).json({ message: "Order saved successfully", order });
   } catch (err) {
-    console.error("Order save error:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("❌ Order save error:", err.message);
+    res.status(500).json({ error: "Server error", details: err.message });
   }
 });
 
-// Get all orders
+// ✅ Get all orders
 router.get("/", async (req, res) => {
   try {
-    const orders = await Order.find().populate("userId", "name email");
+    const orders = await Order.find();
     res.json(orders);
   } catch (err) {
-    console.error("Get orders error:", err);
+    console.error("❌ Get orders error:", err.message);
     res.status(500).json({ error: "Server error" });
   }
 });
